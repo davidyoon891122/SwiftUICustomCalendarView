@@ -37,13 +37,18 @@ struct CalendarView: View {
     
     private var headerView: some View {
         VStack {
-            Text(month, formatter: Self.dateFormatter)
-                .font(.title)
-                .padding(.bottom)
+            HStack {
+                Text(month, formatter: Self.dateFormatter)
+                    .bold()
+                Spacer()
+            }
+            .padding()
+            
             
             HStack {
                 ForEach(Self.weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
+                        .foregroundStyle(symbol == "일" ? .red : .gray)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -159,7 +164,8 @@ extension CalendarView {
     
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy년 MM월"
         return formatter
     }()
     
