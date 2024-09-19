@@ -63,32 +63,25 @@ struct CalendarView: View {
         
         return VStack {
             LazyVGrid(columns: Array(repeating: GridItem(), count: 7)) {
-                // 이전 달의 일자를 표시
-                ForEach(0 ..< firstWeekday, id: \.self) { index in
-                    let day = previousMonthDays - (firstWeekday - 1 - index)
-                    RoundedRectangle(cornerRadius: 5.0)
-                        .foregroundStyle(Color.clear)
-                        .overlay(
-                            Text(String(day))
-                                .foregroundColor(.gray)
-                        )
-                }
-                
-                // 현재 달의 일자를 표시
-                ForEach(0 ..< daysInMonth, id: \.self) { index in
-                    let date = getDate(for: index)
-                    let day = index + 1
-                    let clicked = clickedDates.contains(date)
-                    
-                    CellView(day: day, clicked: clicked)
-                        .onTapGesture {
-                            if clicked {
-                                clickedDates.remove(date)
-                            } else {
-                                clickedDates.insert(date)
-                            }
+                ForEach(0 ..< daysInMonth + firstWeekday, id: \.self) { index in
+                          if index < firstWeekday {
+                            RoundedRectangle(cornerRadius: 5)
+                              .foregroundColor(Color.clear)
+                          } else {
+                            let date = getDate(for: index - firstWeekday)
+                            let day = index - firstWeekday + 1
+                            let clicked = clickedDates.contains(date)
+                            
+                            CellView(day: day, clicked: clicked)
+                              .onTapGesture {
+                                if clicked {
+                                  clickedDates.remove(date)
+                                } else {
+                                  clickedDates.insert(date)
+                                }
+                              }
+                          }
                         }
-                }
             }
         }
     }
