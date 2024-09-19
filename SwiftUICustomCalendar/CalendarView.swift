@@ -11,7 +11,7 @@ struct CalendarView: View {
     
     @State var month: Date
     @State var offset: CGSize = CGSize()
-    @State var clickedDates: Set<Date> = []
+    @State var markedDates: Set<Date> = []
     
     var body: some View {
         VStack {
@@ -48,61 +48,58 @@ struct CalendarView: View {
             HStack {
                 ForEach(Self.weekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
+                        .font(.system(size: 12.0))
                         .foregroundStyle(symbol == "일" ? .red : .gray)
                         .frame(maxWidth: .infinity)
                 }
             }
             .padding(.bottom, 5.0)
         }
+        .padding(.horizontal)
     }
     
     private var calendarGridView: some View {
         let daysInMonth: Int = numberOfDays(in: month)
         let firstWeekday: Int = firstWeekdayOfMonth(in: month) - 1
-        let previousMonthDays: Int = numberOfDays(in: previousMonth())
-        
+
         return VStack {
             LazyVGrid(columns: Array(repeating: GridItem(), count: 7)) {
                 ForEach(0 ..< daysInMonth + firstWeekday, id: \.self) { index in
-                          if index < firstWeekday {
-                            RoundedRectangle(cornerRadius: 5)
-                              .foregroundColor(Color.clear)
-                          } else {
-                            let date = getDate(for: index - firstWeekday)
-                            let day = index - firstWeekday + 1
-                            let clicked = clickedDates.contains(date)
-                            
-                            CellView(day: day, clicked: clicked)
-                              .onTapGesture {
-                                if clicked {
-                                  clickedDates.remove(date)
-                                } else {
-                                  clickedDates.insert(date)
-                                }
-                              }
-                          }
-                        }
+                    if index < firstWeekday {
+                        RoundedRectangle(cornerRadius: 5)
+                            .foregroundColor(Color.clear)
+                    } else {
+                        let date = getDate(for: index - firstWeekday)
+                        let day = index - firstWeekday + 1
+                        let clicked = markedDates.contains(date)
+                        
+                        CellView(day: day, marked: clicked)
+                    }
+                }
             }
         }
+        .padding(.horizontal)
     }
     
     private struct CellView: View {
         var day: Int
-        var clicked: Bool = false
+        var marked: Bool = false
         
-        init(day: Int, clicked: Bool) {
+        init(day: Int, marked: Bool) {
             self.day = day
-            self.clicked = clicked
+            self.marked = marked
         }
         
         var body: some View {
             ZStack {
                 RoundedRectangle(cornerRadius: 5.0)
                     .opacity(0)
-                    .overlay(Text(String(day)))
-                    .foregroundStyle(.blue)
+                    .overlay {
+                        Text(String(day))
+                    }
+                    .foregroundStyle(.black)
                 
-                if clicked {
+                if marked {
                     Circle()
                         .foregroundStyle(.blue.opacity(0.6))
                         .overlay {
@@ -144,10 +141,6 @@ private extension CalendarView {
         if let newMonth = calendar.date(byAdding: .month, value: value, to: month) {
             self.month = newMonth
         }
-    }
-    
-    func previousMonth() -> Date {
-        Calendar.current.date(byAdding: .month, value: -1, to: month)!
     }
     
 }
