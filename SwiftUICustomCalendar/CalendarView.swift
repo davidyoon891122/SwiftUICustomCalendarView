@@ -34,7 +34,6 @@ struct CalendarView: View {
         )
     }
     
-    
     private var headerView: some View {
         VStack {
             HStack {
@@ -43,7 +42,6 @@ struct CalendarView: View {
                 Spacer()
             }
             .padding()
-            
             
             HStack {
                 ForEach(Self.weekdaySymbols, id: \.self) { symbol in
@@ -59,21 +57,33 @@ struct CalendarView: View {
     }
     
     private var calendarGridView: some View {
-        let daysInMonth: Int = numberOfDays(in: month)
-        let firstWeekday: Int = firstWeekdayOfMonth(in: month) - 1
-
+        let daysInMonth = numberOfDays(in: month)
+        let firstWeekday = firstWeekdayOfMonth(in: month) - 1 // 0-based index
+        let totalDays = firstWeekday + daysInMonth
+        let totalCellsNeeded = ((totalDays + 6) / 7) * 7 // 전체 셀 수를 7의 배수로 맞춤
+        
+        // 이전 달의 마지막 날 계산
+        let previousMonthDate = previousMonth()
+        let daysInPreviousMonth = numberOfDays(in: previousMonthDate)
+        
         return VStack {
             LazyVGrid(columns: Array(repeating: GridItem(), count: 7)) {
-                ForEach(0 ..< daysInMonth + firstWeekday, id: \.self) { index in
+                ForEach(0 ..< totalCellsNeeded, id: \.self) { index in
                     if index < firstWeekday {
-                        RoundedRectangle(cornerRadius: 5)
-                            .foregroundColor(Color.clear)
-                    } else {
-                        let date = getDate(for: index - firstWeekday)
+                        // 이전 달의 일자 표시
+                        let day = daysInPreviousMonth - (firstWeekday - index - 1)
+                        CellView(day: day, isCurrentMonth: false)
+                    } else if index < firstWeekday + daysInMonth {
+                        // 현재 달의 일자 표시
                         let day = index - firstWeekday + 1
-                        let clicked = markedDates.contains(date)
+                        let date = getDate(for: day - 1)
+                        let marked = markedDates.contains(date)
                         
-                        CellView(day: day, marked: clicked)
+                        CellView(day: day, marked: marked)
+                    } else {
+                        // 다음 달의 일자 표시
+                        let day = index - (firstWeekday + daysInMonth) + 1
+                        CellView(day: day, isCurrentMonth: false)
                     }
                 }
             }
@@ -84,10 +94,12 @@ struct CalendarView: View {
     private struct CellView: View {
         var day: Int
         var marked: Bool = false
+        var isCurrentMonth: Bool = true
         
-        init(day: Int, marked: Bool) {
+        init(day: Int, marked: Bool = false, isCurrentMonth: Bool = true) {
             self.day = day
             self.marked = marked
+            self.isCurrentMonth = isCurrentMonth
         }
         
         var body: some View {
@@ -96,10 +108,10 @@ struct CalendarView: View {
                     .opacity(0)
                     .overlay {
                         Text(String(day))
+                            .foregroundColor(isCurrentMonth ? .black : .gray)
                     }
-                    .foregroundStyle(.black)
                 
-                if marked {
+                if marked && isCurrentMonth {
                     Circle()
                         .foregroundStyle(.blue.opacity(0.6))
                         .overlay {
@@ -109,9 +121,9 @@ struct CalendarView: View {
                 }
             }
             .frame(width: 32.0, height: 32.0)
+            .disabled(!isCurrentMonth) // 현재 달이 아닌 일자는 터치 불가능
         }
     }
-    
 }
 
 private extension CalendarView {
@@ -143,15 +155,17 @@ private extension CalendarView {
         }
     }
     
+    func previousMonth() -> Date {
+        Calendar.current.date(byAdding: .month, value: -1, to: month)!
+    }
 }
-
 
 extension CalendarView {
     
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "yyyy년 MM월"
+        formatter.dateFormat = "yyyy년 M월"
         return formatter
     }()
     
@@ -160,7 +174,6 @@ extension CalendarView {
         calendar.locale = Locale(identifier: "ko_KR")
         return calendar.veryShortWeekdaySymbols
     }()
-    
 }
 
 #Preview {
